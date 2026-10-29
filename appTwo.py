@@ -43,7 +43,7 @@ st.markdown("---")
 st.markdown("### 2. Or Convert URL (YouTube / Web)")
 url_input = st.text_input("Paste YouTube or Web URL (opsional):", placeholder="https://www.youtube.com/watch?v=...")
 
-if st.button("🔄 Converting", type="primary"):
+if st.button("🔄 Convert", type="primary"):
     if not uploaded_files and not url_input.strip():
         st.warning("Upload at least 1 file or enter a URL!")
     else:
