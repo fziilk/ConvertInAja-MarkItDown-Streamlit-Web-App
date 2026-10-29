@@ -26,7 +26,6 @@ st.write("Convert multiple files with `markitdown` by Microsoft on Python.")
 st.write("Support these formats:")
 st.write(file_formats)
 
-# Tab atau bagian input: File Uploader & URL Input
 st.markdown("### 1. Upload Files")
 uploaded_files = st.file_uploader(
     "Support multiple files upload!", 
@@ -44,7 +43,6 @@ st.markdown("---")
 st.markdown("### 2. Or Convert URL (YouTube / Web)")
 url_input = st.text_input("Paste YouTube or Web URL (opsional):", placeholder="https://www.youtube.com/watch?v=...")
 
-# Tombol Eksekusi
 if st.button("🔄 Converting", type="primary"):
     if not uploaded_files and not url_input.strip():
         st.warning("Upload at least 1 file or enter a URL!")
@@ -58,7 +56,6 @@ if st.button("🔄 Converting", type="primary"):
             
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 
-                # Proses file yang diunggah
                 if uploaded_files:
                     for uploaded_file in uploaded_files:
                         tmp_path = None
@@ -82,13 +79,11 @@ if st.button("🔄 Converting", type="primary"):
                             if tmp_path and os.path.exists(tmp_path):
                                 os.unlink(tmp_path)
                 
-                # Proses URL jika diisi
                 if url_input.strip():
                     try:
                         result = md.convert(url_input.strip())
                         markdown_text = result.text_content
                         
-                        # Beri nama file markdown berdasarkan URL atau default
                         output_filename = "youtube_or_web_content.md"
                         zip_file.writestr(output_filename, markdown_text)
                         success_count += 1
@@ -96,7 +91,6 @@ if st.button("🔄 Converting", type="primary"):
                         failed_count += 1
                         st.warning(f"Failed to process URL `{url_input}`: {e}")
 
-        # Tampilkan hasil akhir
         if success_count > 0:
             st.success(f"Successfully converted **{success_count} items**! {f'({failed_count} items failed)' if failed_count > 0 else ''}")
             
