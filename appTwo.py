@@ -7,6 +7,22 @@ import io
 
 st.set_page_config(page_title="ConvertInAjaBro", page_icon="📝")
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stFileUploaderDropzoneInstructions"] > div {
+        display: none;
+    }
+    [data-testid="stFileUploaderDropzoneInstructions"]::after {
+        content: "Limit 200MB per file";
+        font-size: 0.875rem;
+        opacity: 0.7;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 file_formats = [
     "PDF",
     "PowerPoint",
@@ -21,6 +37,18 @@ file_formats = [
     "EPubs"
 ]
 
+# Key dinamis untuk file_uploader: mengubah key = mereset widget (mengosongkan file)
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
+if "url_input" not in st.session_state:
+    st.session_state.url_input = ""
+
+
+def clear_files():
+    st.session_state.uploader_key += 1  # widget uploader baru & kosong
+    st.session_state.url_input = ""     # kosongkan input URL juga
+
+
 st.title("ConvertInAjaBro Web App by Fz")
 st.write("Convert multiple files with `markitdown` by Microsoft on Python.")
 st.write("Support these formats:")
@@ -28,34 +56,45 @@ st.write(file_formats)
 
 st.markdown("### 1. Upload Files")
 uploaded_files = st.file_uploader(
-    "Support multiple files upload!", 
+    "Support multiple files upload!",
     type=[
-        "pdf", "docx", "doc", "pptx", "ppt", "xlsx", "xls", 
-        "jpg", "jpeg", "png", "webp", "bmp", 
-        "mp3", "wav", "m4a", "flac", 
-        "html", "htm", "csv", "json", "xml", "txt", "md", 
+        "pdf", "docx", "doc", "pptx", "ppt", "xlsx", "xls",
+        "jpg", "jpeg", "png", "webp", "bmp",
+        "mp3", "wav", "m4a", "flac",
+        "html", "htm", "csv", "json", "xml", "txt", "md",
         "zip", "epub"
     ],
-    accept_multiple_files=True
+    accept_multiple_files=True,
+    key=f"uploader_{st.session_state.uploader_key}"
 )
 
 st.markdown("---")
 st.markdown("### 2. Or Convert URL (YouTube / Web)")
-url_input = st.text_input("Paste YouTube or Web URL (opsional):", placeholder="https://www.youtube.com/watch?v=...")
+url_input = st.text_input(
+    "Paste YouTube or Web URL (opsional):",
+    placeholder="https://www.youtube.com/watch?v=...",
+    key="url_input"
+)
 
-if st.button("🔄 Convert", type="primary"):
+col1, col2 = st.columns(2)
+with col1:
+    convert_clicked = st.button("🔄 Convert", type="primary", use_container_width=True)
+with col2:
+    st.button("🗑️ Clear Files", on_click=clear_files, use_container_width=True)
+
+if convert_clicked:
     if not uploaded_files and not url_input.strip():
         st.warning("Upload at least 1 file or enter a URL!")
     else:
         zip_buffer = io.BytesIO()
         success_count = 0
         failed_count = 0
-        
+
         with st.spinner("Processing... Please be patient (audio transcription or image OCR might take a bit longer)."):
             md = MarkItDown()
-            
+
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                
+
                 if uploaded_files:
                     for uploaded_file in uploaded_files:
                         tmp_path = None
@@ -66,10 +105,10 @@ if st.button("🔄 Convert", type="primary"):
 
                             result = md.convert(tmp_path)
                             markdown_text = result.text_content
-                            
+
                             base_name = os.path.splitext(uploaded_file.name)[0]
                             output_filename = f"{base_name}.md"
-                            
+
                             zip_file.writestr(output_filename, markdown_text)
                             success_count += 1
                         except Exception as e:
@@ -78,12 +117,12 @@ if st.button("🔄 Convert", type="primary"):
                         finally:
                             if tmp_path and os.path.exists(tmp_path):
                                 os.unlink(tmp_path)
-                
+
                 if url_input.strip():
                     try:
                         result = md.convert(url_input.strip())
                         markdown_text = result.text_content
-                        
+
                         output_filename = "youtube_or_web_content.md"
                         zip_file.writestr(output_filename, markdown_text)
                         success_count += 1
@@ -93,7 +132,7 @@ if st.button("🔄 Convert", type="primary"):
 
         if success_count > 0:
             st.success(f"Successfully converted **{success_count} items**! {f'({failed_count} items failed)' if failed_count > 0 else ''}")
-            
+
             zip_buffer.seek(0)
             st.download_button(
                 label="📥 Download All Results (.zip)",
@@ -104,4 +143,3 @@ if st.button("🔄 Convert", type="primary"):
             )
         else:
             st.error("No items were successfully converted.")
-            
